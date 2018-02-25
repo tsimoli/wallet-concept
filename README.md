@@ -8,5 +8,5 @@ Create app and replace app secret in op_client.dart file with your own token.
 
 End result looks like this:
 
-![](screenshots/animatedmainpage.gif?raw=true)
+![Alt text](screenshots/animatemainpage.gif)
 
