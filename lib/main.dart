@@ -25,10 +25,13 @@ class WalletPage extends StatefulWidget {
   _WalletPageState createState() => new _WalletPageState();
 }
 
-class _WalletPageState extends State<WalletPage> {
+class _WalletPageState extends State<WalletPage>
+    with SingleTickerProviderStateMixin {
   OPClient opClient = new OPClient();
   dynamic balance = 0.0;
   List<Transaction> transactions = [];
+  Animation<double> animation;
+  AnimationController controller;
 
   /*
       Possible account ids
@@ -44,9 +47,17 @@ class _WalletPageState extends State<WalletPage> {
   @override
   void initState() {
     super.initState();
+
+    controller = new AnimationController(
+        duration: const Duration(milliseconds: 2000), vsync: this);
+
+    animation = new Tween(begin: balance, end: 0.0).animate(controller);
+
     opClient.getBalance(accountId).then((dynamic newBalance) =>
         setState(() {
+          animation = new Tween(begin: balance, end: newBalance).animate(controller);
           balance = newBalance;
+          controller.forward();
         }));
 
     opClient.getTransactions(accountId).then((
@@ -54,6 +65,17 @@ class _WalletPageState extends State<WalletPage> {
         setState(() {
           transactions = newTransactions;
         }));
+
+    controller.forward();
+  }
+
+  addFunds() {
+    setState(() {
+      // Reset controller to animate correctly -> Maybe better way to do this?
+      controller.reset();
+      animation = new Tween(begin: balance, end: balance += 10.0).animate(controller);
+      controller.forward();
+    });
   }
 
   @override
@@ -64,19 +86,18 @@ class _WalletPageState extends State<WalletPage> {
         child: new Stack (
           children: <Widget>[
             _buildAppbar(context),
-            _buildAppbarContents,
+            _buildAppbarContents(addFunds),
             _buildBody
           ],
         ),
         decoration: new BoxDecoration(
           gradient: new LinearGradient(
               colors: [
-                Colors.indigo[900],
-                Colors.indigo[300]
+                new Color.fromRGBO(117, 72, 167, 1.0),
+                new Color.fromRGBO(143, 90, 162, 1.0),
               ],
               begin: const FractionalOffset(-2.0, 0.0),
               end: const FractionalOffset(1.0, 0.0),
-              stops: [0.0, 1.0],
               tileMode: TileMode.clamp
           ),
         ),
@@ -87,7 +108,7 @@ class _WalletPageState extends State<WalletPage> {
   Container get _buildBody {
     return new Container(
       margin: new EdgeInsets.only(top: 210.0),
-      color: Colors.grey[300],
+      color: new Color.fromRGBO(219, 216, 220, 1.0),
       constraints: new BoxConstraints.expand(),
       child: new Container(
         margin: new EdgeInsets.only(top: 20.0),
@@ -126,20 +147,31 @@ class _WalletPageState extends State<WalletPage> {
     );
   }
 
-  Widget get _buildAppbarContents {
-    return new Container(
-      margin: new EdgeInsets.only(top: 100.0),
-      child: new Center(child: new Column(children: <Widget>[
-        new Container(child: new Text("Available balance",
-          style: new TextStyle(color: Colors.white),),
-          margin: new EdgeInsets.only(bottom: 1.0),),
-        new Text("${balance.toString()} €",
-          style: new TextStyle(color: Colors.white, fontSize: 40.0),),
-        new Container(margin: new EdgeInsets.only(top: 10.0),
-            child: new Text("+ ADD MONEY", style: new TextStyle(
-                color: Colors.white, fontSize: 15.0)))
-      ],)
-      ),
+  Widget _buildAppbarContents(Function adddfunds) {
+    Color balanceColor = balance < 0 ? Colors.red : Colors.green;
+
+    return new AnimatedBuilder(
+      animation: animation,
+      builder: (BuildContext context, Widget child) {
+        print(animation.value);
+        return new Container(
+          margin: new EdgeInsets.only(top: 100.0),
+          child: new Center(child: new Column(children: <Widget>[
+            new Container(child: new Text("Available balance",
+                style: new TextStyle(color: Colors.white),),
+                margin: new EdgeInsets.only(bottom: 1.0),),
+            new Text("${animation.value.toStringAsFixed(animation.value.truncateToDouble() == animation.value ? 0 : 2)} €",
+              style: new TextStyle(color: balanceColor, fontSize: 40.0),),
+            new GestureDetector(
+              onTap: adddfunds,
+              child: new Container(margin: new EdgeInsets.only(top: 10.0),
+                  child: new Text("+ ADD MONEY", style: new TextStyle(
+                      color: Colors.white, fontSize: 15.0))),
+            )
+          ],)
+          ),
+        );
+      },
     );
   }
 
@@ -156,5 +188,10 @@ class _WalletPageState extends State<WalletPage> {
             style: new TextStyle(color: Colors.white, fontSize: 20.0)),
       ]),
     );
+  }
+
+  dispose() {
+    controller.dispose();
+    super.dispose();
   }
 }

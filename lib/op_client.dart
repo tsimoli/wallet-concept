@@ -6,8 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:wallet_concept/transaction.dart';
 
 class OPClient {
-  static final String apiKey = "7KGGPugfRS8XT8LCGxSxCEaMTI9wBrHl";
-  static final String token = "YOUR_APP_TOKEN";
+  static final String apiKey = "YOUR_API_KEY";
+  static final String token = "fdb6c7c24bbc3a2c4144c1848825ab7d3a4ccb43";
 
   static final String OPBaseUrl = "sandbox.apis.op-palvelut.fi";
 
